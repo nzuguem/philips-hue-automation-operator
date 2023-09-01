@@ -69,10 +69,10 @@ uninstall: ## Uninstall CRDs from the K8s cluster specified in ~/.kube/config.
 	@$(foreach file, $(wildcard target/kubernetes/*-v1.yml), kubectl delete -f $(file);)
 
 deploy: ## Deploy controller to the K8s cluster specified in ~/.kube/config.
-	kubectl apply -f target/kubernetes/kubernetes.yml
+	kubectl apply -f target/kubernetes/minikube.yml
 
 undeploy: ## Undeploy controller from the K8s cluster specified in ~/.kube/config.
-	kubectl delete -f target/kubernetes/kubernetes.yml
+	kubectl delete -f target/kubernetes/minikube.yml
 
 ##@Bundle
 .PHONY: bundle

@@ -81,9 +81,9 @@ k8s/configure.sh "<HUE_BRIDGE_IP>" "<HUE_BRIDGE_API_TOKEN>"
 ```bash
 
 # Apply CRDs
-kubectl apply -f target/kubernetes/esas.automations.nzuguem.fr-v1.yml
+make install
 # Apply Controller
-kubectl apply -f target/kubernetes/minikube.yml
+make deploy
 ```
 
 # Useful links 🔗
