@@ -13,6 +13,8 @@ import org.slf4j.LoggerFactory;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -39,15 +41,12 @@ public class EnergySavingAutomationReconciler implements Reconciler<EnergySaving
 
     if (this.isOutOfInterval(resource)) {
 
+      resource.setStatus(new EnergySavingAutomationStatus(this.statusOfLights(lights), Boolean.TRUE, 0));
 
-      if (Objects.isNull(resource.getStatus())) {
-        LOGGER.info("We are outside the configured interval 🌒");
-        resource.setStatus(new EnergySavingAutomationStatus(this.statusOfLights(lights), Boolean.TRUE, 0));
-        return UpdateControl.updateStatus(resource);
-      }
-
-      LOGGER.info("We are already outside the configured interval 🌒");
-      return UpdateControl.noUpdate();
+      var numberMinutesBeforeNextReconciliation =this.computeNumberMinutesBeforeNextReconciliation(resource);
+      LOGGER.info("We are outside the configured interval 🌒- The next reconciliation will be in {} Minutes", numberMinutesBeforeNextReconciliation);
+      return UpdateControl.updateStatus(resource)
+              .rescheduleAfter(numberMinutesBeforeNextReconciliation, TimeUnit.MINUTES);
     }
 
     LOGGER.info("We are inside the configured interval 🌝");
@@ -64,7 +63,25 @@ public class EnergySavingAutomationReconciler implements Reconciler<EnergySaving
     }
 
     return UpdateControl.updateResourceAndStatus(resource)
-            .rescheduleAfter(2, TimeUnit.MINUTES);
+            .rescheduleAfter(5, TimeUnit.MINUTES);
+  }
+
+  private long computeNumberMinutesBeforeNextReconciliation(EnergySavingAutomation resource) {
+    var currentDateTime = LocalDateTime.now(Clock.systemDefaultZone());
+
+    if (currentDateTime.getHour() < resource.getSpec().startTimeHours()) {
+      return ChronoUnit.MINUTES.
+              between(currentDateTime,
+                      currentDateTime.with(LocalTime.of(resource.getSpec().startTimeHours(), 0, 0))
+              );
+    }
+
+    var dateTimeOfStartTimeHoursNextDay = currentDateTime
+            .with(LocalTime.MIDNIGHT)
+            .plusDays(1)
+            .plusHours(resource.getSpec().startTimeHours());
+
+    return ChronoUnit.MINUTES.between(currentDateTime, dateTimeOfStartTimeHoursNextDay);
   }
 
   private boolean isOutOfInterval(EnergySavingAutomation resource) {
@@ -90,16 +107,8 @@ public class EnergySavingAutomationReconciler implements Reconciler<EnergySaving
 
     LOGGER.info("We are inside the configured interval 🌝 - no lights switched on");
 
-    if (Objects.isNull(resource.getStatus())) {
+    resource.setStatus(new EnergySavingAutomationStatus(this.setAllLightsToStateOff(lights), Boolean.FALSE, 0));
 
-      resource.setStatus(new EnergySavingAutomationStatus(this.setAllLightsToStateOff(lights), Boolean.FALSE, 0));
-
-    } else {
-
-      var status = resource.getStatus();
-      status.setLightsState(this.setAllLightsToStateOff(lights));
-
-    }
   }
 
   private void processAtLeastOneLightsOn(EnergySavingAutomation resource, List<Light> lights) {
@@ -117,8 +126,7 @@ public class EnergySavingAutomationReconciler implements Reconciler<EnergySaving
     } else {
 
       var status = resource.getStatus();
-      status.setLightsState(this.setAllLightsToStateOff(lights));
-      status.setNumberOfInterventions(status.getNumberOfInterventions() + 1);
+      resource.setStatus(new EnergySavingAutomationStatus(this.setAllLightsToStateOff(lights), Boolean.FALSE, status.getNumberOfInterventions() + 1));
 
     }
 
