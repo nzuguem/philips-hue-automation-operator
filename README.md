@@ -64,6 +64,10 @@ You have just tested the project in Dev Mode Quarkus💙 and only the CRDs (Cust
 
 Your goal is to deploy the controller in your cluster.
 
+> ⚠️ By default, a Docker container uses UTC as its timezone. All the timestamps and operations inside the Docker container are based on Coordinated Universal Time, regardless of the host machine’s timezone. This standardization ensures the smooth running of applications in different geographical locations. However, there may be instances where you need to set a different timezone within a Docker container.
+> 
+> In order for the controller to run automations correctly, you must adapt your time zone in [application.properties](src/main/resources/application.properties) : `quarkus.kubernetes.env.vars.TZ=<YOUR_TIMEZONE>`
+
 ## Go PROD 🚀
 1. Build the Docker image using Minikube's Docker daemon, Docker images will be directly accessible in the Kubernetes cluster, without the need for a registry.
 ```bash
