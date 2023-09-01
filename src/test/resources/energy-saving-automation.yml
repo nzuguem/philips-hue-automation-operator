@@ -1,0 +1,8 @@
+apiVersion: automations.nzuguem.fr/v1
+kind: EnergySavingAutomation
+metadata:
+  name: my-automation
+  namespace: philips-hue-operator
+spec:
+  startTimeHours: 6
+  endTimeHours: 18
