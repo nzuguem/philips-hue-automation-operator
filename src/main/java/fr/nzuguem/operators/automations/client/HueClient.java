@@ -49,12 +49,12 @@ public interface HueClient {
 
     @PUT
     @Path("{token}/lights/{id}/state")
-    JsonNode switchOff(@PathParam("token") String token, @PathParam("id") String lightId, SwitchCommand switchCommand);
+    JsonNode switchState(@PathParam("token") String token, @PathParam("id") String lightId, SwitchCommand switchCommand);
 
     default void switchOff(String lightId) {
         var token = ConfigProvider.getConfig().getValue("application.hue-api.token", String.class);
 
-        var jsonResponse = this.switchOff(token, lightId, new SwitchCommand(false));
+        var jsonResponse = this.switchState(token, lightId, SwitchCommand.off());
 
         if (jsonResponse.toString().contains("error")) {
             LOGGER.error("⚠️ - {}", jsonResponse);
